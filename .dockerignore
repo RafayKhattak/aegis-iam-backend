@@ -1,0 +1,7 @@
+.git
+.env
+deployments/terraform
+**/*_test.go
+tmp
+bin
+.github
