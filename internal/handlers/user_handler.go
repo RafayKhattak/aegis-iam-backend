@@ -28,6 +28,15 @@ func NewUserHandler(service services.UserService) *UserHandler {
 	}
 }
 
+// @Summary Register a new user
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param request body models.RegisterRequest true "User credentials"
+// @Success 201 {object} models.UserResponse
+// @Failure 400 {object} map[string]string
+// @Failure 409 {object} map[string]string
+// @Router /users/register [post]
 func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var req models.RegisterRequest
 	decoder := json.NewDecoder(r.Body)
@@ -57,6 +66,14 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, user)
 }
 
+// @Summary Login user
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param request body LoginRequest true "User credentials"
+// @Success 200 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Router /users/login [post]
 func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var req LoginRequest
 	decoder := json.NewDecoder(r.Body)
@@ -88,6 +105,13 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// @Summary Get current user profile
+// @Tags users
+// @Security BearerAuth
+// @Produce json
+// @Success 200 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Router /users/me [get]
 func (h *UserHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 	userID, ok := middleware.UserIDFromContext(r.Context())
 	if !ok {

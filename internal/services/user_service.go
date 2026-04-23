@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/RafayKhattak/aegis-iam-backend/internal/models"
-	"github.com/RafayKhattak/aegis-iam-backend/internal/repository"
 	"github.com/RafayKhattak/aegis-iam-backend/internal/repository/db"
 	"github.com/RafayKhattak/aegis-iam-backend/pkg/hash"
 	appJWT "github.com/RafayKhattak/aegis-iam-backend/pkg/jwt"
@@ -24,14 +23,14 @@ type UserService interface {
 }
 
 type userService struct {
-	store         *repository.Store
+	querier       db.Querier
 	tokenManager  *appJWT.TokenManager
 	tokenDuration time.Duration
 }
 
-func NewUserService(store *repository.Store, tokenManager *appJWT.TokenManager, tokenDuration time.Duration) UserService {
+func NewUserService(querier db.Querier, tokenManager *appJWT.TokenManager, tokenDuration time.Duration) UserService {
 	return &userService{
-		store:         store,
+		querier:       querier,
 		tokenManager:  tokenManager,
 		tokenDuration: tokenDuration,
 	}
@@ -43,7 +42,7 @@ func (s *userService) Register(ctx context.Context, req models.RegisterRequest) 
 		return models.UserResponse{}, err
 	}
 
-	user, err := s.store.CreateUser(ctx, db.CreateUserParams{
+	user, err := s.querier.CreateUser(ctx, db.CreateUserParams{
 		Email:        req.Email,
 		PasswordHash: hashedPassword,
 		Role:         "user",
@@ -70,7 +69,7 @@ func (s *userService) Register(ctx context.Context, req models.RegisterRequest) 
 }
 
 func (s *userService) Login(ctx context.Context, email, password string) (string, error) {
-	user, err := s.store.GetUserByEmail(ctx, email)
+	user, err := s.querier.GetUserByEmail(ctx, email)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return "", ErrInvalidCredentials

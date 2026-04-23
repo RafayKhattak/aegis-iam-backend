@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 
+	_ "github.com/RafayKhattak/aegis-iam-backend/docs"
 	"github.com/RafayKhattak/aegis-iam-backend/internal/config"
 	"github.com/RafayKhattak/aegis-iam-backend/internal/handlers"
 	appMiddleware "github.com/RafayKhattak/aegis-iam-backend/internal/middleware"
@@ -14,6 +15,7 @@ import (
 	appJWT "github.com/RafayKhattak/aegis-iam-backend/pkg/jwt"
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
+	httpSwagger "github.com/swaggo/http-swagger/v2"
 )
 
 type healthResponse struct {
@@ -22,6 +24,14 @@ type healthResponse struct {
 	Version string `json:"version"`
 }
 
+// @title Aegis-IAM API
+// @version 1.0
+// @description Identity and Access Management Service for Khattak Industries.
+// @host localhost:8080
+// @BasePath /
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
 func main() {
 	appConfig := config.LoadConfig()
 	ctx := context.Background()
@@ -41,6 +51,7 @@ func main() {
 	router.Use(chiMiddleware.Recoverer)
 	router.Post("/users/register", userHandler.Register)
 	router.Post("/users/login", userHandler.Login)
+	router.Get("/swagger/*", httpSwagger.Handler(httpSwagger.URL("http://localhost:8080/swagger/doc.json")))
 	router.Group(func(r chi.Router) {
 		r.Use(appMiddleware.AuthMiddleware(tokenManager))
 		r.Get("/users/me", userHandler.GetMe)
