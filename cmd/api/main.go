@@ -8,8 +8,10 @@ import (
 
 	"github.com/RafayKhattak/aegis-iam-backend/internal/config"
 	"github.com/RafayKhattak/aegis-iam-backend/internal/handlers"
+	appMiddleware "github.com/RafayKhattak/aegis-iam-backend/internal/middleware"
 	"github.com/RafayKhattak/aegis-iam-backend/internal/repository"
 	"github.com/RafayKhattak/aegis-iam-backend/internal/services"
+	appJWT "github.com/RafayKhattak/aegis-iam-backend/pkg/jwt"
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
 )
@@ -30,13 +32,19 @@ func main() {
 	}
 	defer store.Close()
 
-	userService := services.NewUserService(store)
+	tokenManager := appJWT.NewTokenManager(appConfig.JWTSecret)
+	userService := services.NewUserService(store, tokenManager, appConfig.TokenDuration)
 	userHandler := handlers.NewUserHandler(userService)
 
 	router := chi.NewRouter()
 	router.Use(chiMiddleware.Logger)
 	router.Use(chiMiddleware.Recoverer)
 	router.Post("/users/register", userHandler.Register)
+	router.Post("/users/login", userHandler.Login)
+	router.Group(func(r chi.Router) {
+		r.Use(appMiddleware.AuthMiddleware(tokenManager))
+		r.Get("/users/me", userHandler.GetMe)
+	})
 
 	router.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
