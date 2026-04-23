@@ -11,7 +11,8 @@ const defaultPort = "8080"
 
 // AppConfig contains runtime configuration values for the API.
 type AppConfig struct {
-	Port string
+	Port     string
+	DBSource string
 }
 
 // LoadConfig loads application configuration from the environment.
@@ -30,7 +31,8 @@ func LoadConfig() AppConfig {
 	}
 
 	return AppConfig{
-		Port: port,
+		Port:     port,
+		DBSource: os.Getenv("DB_SOURCE"),
 	}
 }
 

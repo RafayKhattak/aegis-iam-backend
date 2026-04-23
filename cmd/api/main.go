@@ -1,11 +1,15 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
 
 	"github.com/RafayKhattak/aegis-iam-backend/internal/config"
+	"github.com/RafayKhattak/aegis-iam-backend/internal/handlers"
+	"github.com/RafayKhattak/aegis-iam-backend/internal/repository"
+	"github.com/RafayKhattak/aegis-iam-backend/internal/services"
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
 )
@@ -18,10 +22,21 @@ type healthResponse struct {
 
 func main() {
 	appConfig := config.LoadConfig()
+	ctx := context.Background()
+
+	store, err := repository.NewStore(ctx, appConfig.DBSource)
+	if err != nil {
+		log.Fatalf("failed to initialize database store: %v", err)
+	}
+	defer store.Close()
+
+	userService := services.NewUserService(store)
+	userHandler := handlers.NewUserHandler(userService)
 
 	router := chi.NewRouter()
 	router.Use(chiMiddleware.Logger)
 	router.Use(chiMiddleware.Recoverer)
+	router.Post("/users/register", userHandler.Register)
 
 	router.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
